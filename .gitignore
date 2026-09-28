@@ -1,4 +1,4 @@
-.venv/
+ .venv/
 venv/
 __pycache__/
 *.py[cod]
@@ -24,3 +24,4 @@ sourcedata/
 *.wav
 .DS_Store
 Thumbs.db
+*.ruff_cache

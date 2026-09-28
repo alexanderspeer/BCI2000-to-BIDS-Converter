@@ -5,7 +5,7 @@ import json
 import sys
 from pathlib import Path
 
-from .bci2000.inspection import inspect_recording
+from .bci2000.inspection import analyze_states, inspect_recording
 from .bids.validation import validate
 from .convert import convert
 from .logging import configure
@@ -51,6 +51,8 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(inspect_recording(args.file), indent=2))
         elif args.command == "profile":
             info = inspect_recording(args.file)
+            print("Analyzing state values...", file=sys.stderr)
+            info["analysis"] = analyze_states(args.file)
             profile = suggest_profile(info)
             profile["name"] = args.file.stem + "-starter"
             text = json.dumps(profile, indent=2) + "\n"

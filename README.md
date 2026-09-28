@@ -66,9 +66,12 @@ To export only configured states/events/motion without neural data, use
 `--no-neural` with a reviewed profile. The GUI exposes the same choice as
 **Include neural signal data**.
 
-If state-only conversion is selected without a profile, the converter creates a
-conservative starter mapping automatically and reports a warning. Review and save
-that mapping with the `profile` command before using the conversion for analysis.
+If conversion is selected without a profile, the converter creates a conservative
+starter mapping automatically and reports a warning. This adds suggested events and
+motion alongside neural output when neural export is enabled. Review and save that
+mapping with the `profile` command before using the conversion for analysis.
+The GUI asks whether to generate that starter profile or open the custom profile
+builder before conversion begins.
 
 Generate a reviewed starter profile for an unfamiliar recording with:
 

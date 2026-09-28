@@ -62,7 +62,7 @@ class ConverterGUI:
         ttk.Entry(frame, textvariable=self.output_value).grid(row=row, column=1, sticky="ew", padx=8)
         ttk.Button(frame, text="Choose", command=self._choose_output).grid(row=row, column=2)
         row += 1
-        ttk.Label(frame, text="Profile (optional)").grid(row=row, column=0, sticky="w", pady=4)
+        ttk.Label(frame, text="Profile (prompted if empty)").grid(row=row, column=0, sticky="w", pady=4)
         ttk.Entry(frame, textvariable=self.profile_value).grid(row=row, column=1, sticky="ew", padx=8)
         profile_buttons = ttk.Frame(frame)
         profile_buttons.grid(row=row, column=2)
@@ -172,6 +172,19 @@ class ConverterGUI:
         except Exception as error:
             messagebox.showerror("Conversion settings", str(error))
             return
+        if not self.profile_value.get().strip():
+            choice = messagebox.askyesnocancel(
+                "Conversion profile",
+                "No profile is selected.\n\n"
+                "Yes: automatically analyze state values and generate a starter profile.\n"
+                "No: open the custom profile builder.\n"
+                "Cancel: return to the conversion form.",
+            )
+            if choice is None:
+                return
+            if choice is False:
+                self._create_profile()
+                return
         settings = {
             "subject": self.subject_value.get(),
             "session": self.session_value.get(),

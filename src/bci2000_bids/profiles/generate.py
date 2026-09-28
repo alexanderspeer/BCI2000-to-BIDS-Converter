@@ -8,12 +8,17 @@ def suggest_profile(info: dict[str, Any]) -> dict[str, Any]:
     events: dict[str, dict[str, Any]] = {}
     motion: dict[str, dict[str, Any]] = {}
     ignored: list[str] = []
+    analysis = info.get("analysis", {})
     for item in info.get("states", []):
         name = str(item["name"])
         lower = name.lower()
-        if any(token in lower for token in ("joystickx", "joysticky", "cursorx", "cursory", "gaze", "eyetracker")):
+        stats = analysis.get(name, {})
+        unique = int(stats.get("unique_values", 0))
+        internal = any(token in lower for token in ("__pad", "sourcetime", "filepart", "running", "recording"))
+        motion_name = any(token in lower for token in ("joystick", "cursor", "gaze", "eyetracker", "position", "posx", "posy"))
+        if not internal and (motion_name or unique > 20) and unique > 1:
             motion[name] = {"column": name, "type": "POSITION", "units": "n/a"}
-        elif int(item.get("bit_width", 0)) <= 1 or any(token in lower for token in ("event", "marker", "stimulus", "target", "movement", "trial", "button", "presentation")):
+        elif not internal and (int(item.get("bit_width", 0)) <= 1 or unique <= 20 or any(token in lower for token in ("event", "marker", "stimulus", "target", "movement", "trial", "button", "presentation"))):
             events[name] = {"strategy": "rising_edge" if int(item.get("bit_width", 0)) == 1 else "change", "trial_type": name}
         else:
             ignored.append(name)
@@ -23,4 +28,5 @@ def suggest_profile(info: dict[str, Any]) -> dict[str, Any]:
         "events": events,
         "motion": motion,
         "ignore": ignored,
+        "analysis": analysis,
     }

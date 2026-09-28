@@ -22,14 +22,16 @@ and state-only conversion. State-only conversion still requires a reviewed profi
 so the application knows which states are events, motion, or ignored data.
 
 If no profile is selected, the GUI generates a review-required starter mapping and
-shows a warning. This is convenient for inspection, but save and review the profile
-before treating the output as analysis-ready.
+shows a warning. This applies to both state-only and neural-plus-state conversion.
+Save and review the profile before treating the output as analysis-ready.
 
 Use `beh` only when neural export is intentionally disabled. For a recording with
 neural channels plus events or motion states, select `eeg` or `ieeg`; events and
 motion are exported in addition to the neural recording. Generate a starter profile
 from the command line with `bci2000-bids profile recording.dat --output profile.json`,
-then review it in the GUI's Profile field.
+then review it in the GUI's Profile field. If the Profile field is empty when
+**Convert** is clicked, the GUI explicitly offers automatic generation, the custom
+profile builder, or cancellation before any conversion starts.
 
 The GUI's **Preserve source and checksum** option copies raw `.dat` files into the
 selected dataset's `sourcedata/` directory. These files may contain identifying

@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
+from .bci2000.inspection import analyze_states
 from .bci2000.reader import BCI2000Recording
 from .bids.dataset import initialize_dataset
 from .bids.electrophysiology import channels_tsv, write_edf
@@ -41,7 +42,7 @@ def discover_inputs(inputs: str | Path | Iterable[str | Path], recursive: bool =
             files.extend(iterator)
         else:
             raise BIDSConversionError(f"Input does not exist: {path}")
-    return sorted(set(files), key=lambda path: str(path).casefold())
+    return sorted(set(files), key=lambda path: (path.name.casefold(), str(path).casefold()))
 
 
 def _load_config(path: str | Path | None) -> dict[str, Any]:
@@ -101,15 +102,17 @@ def convert(inputs: str | Path | Iterable[str | Path], output: str | Path, *, su
     if len({path.name for path in files}) != len(files):
         raise BIDSConversionError("Input files have duplicate names; use unique source filenames")
     generated_profile = False
+    generated_profile_data: dict[str, Any] | None = None
     profile_source = profile or settings.get("profile")
     if isinstance(profile, Profile):
         routing = profile
     else:
         routing = load_profile(profile_source)
-    if not export_neural and profile_source is None and not (routing.events or routing.motion or routing.event_columns):
+    if profile_source is None and not (routing.events or routing.motion or routing.event_columns):
         with BCI2000Recording(files[0]) as first_recording:
-            info = {"states": [{"name": name, "bit_width": int(first_recording.state_definitions[name].get("length", 0))} for name in first_recording.states]}
+            info = {"states": [{"name": name, "bit_width": int(first_recording.state_definitions[name].get("length", 0))} for name in first_recording.states], "analysis": analyze_states(files[0], progress=(lambda fraction: progress(fraction * 0.25, "Analyzing state values") if progress else None))}
         suggestion = suggest_profile(info)
+        generated_profile_data = suggestion
         routing = Profile(name=suggestion["name"], events=suggestion["events"], motion=suggestion["motion"], ignore=frozenset(suggestion["ignore"]), metadata=suggestion["metadata"])
         generated_profile = True
     if not export_neural and not (routing.events or routing.motion or routing.event_columns):
@@ -139,6 +142,9 @@ def convert(inputs: str | Path | Iterable[str | Path], output: str | Path, *, su
             shutil.copytree(root, stage, dirs_exist_ok=True)
         initialize_dataset(stage)
         add_participant(stage, subject)
+        if generated_profile_data is not None:
+            profile_path = stage / "code" / "bci2000-bids" / f"auto-profile-{task}.json"
+            write_json(profile_path, generated_profile_data)
         if destination.exists() and on_existing == "overwrite":
             shutil.rmtree(stage / f"sub-{subject}" / f"ses-{session}")
         (stage / f"sub-{subject}" / f"ses-{session}").mkdir(parents=True, exist_ok=True)
@@ -175,10 +181,17 @@ def convert(inputs: str | Path | Iterable[str | Path], output: str | Path, *, su
                 if export_neural:
                     signal_dir = datatype_dir
                     signal_path = signal_dir / f"{prefix}_{datatype}.edf"
-                    write_edf(signal, signal_path, recording.sampling_frequency, recording.channel_names, recording.channel_units)
+                    # BCI2000 recordings commonly omit SourceChUnits even when
+                    # the decoded SourceChGain values are already physical uV.
+                    # EDF/MNE otherwise interpret the same numbers as volts.
+                    signal_units = [
+                        unit if unit.strip().lower() not in {"", "n/a", "na"} else "uV"
+                        for unit in recording.channel_units
+                    ]
+                    write_edf(signal, signal_path, recording.sampling_frequency, recording.channel_names, signal_units)
                     primary_type = channel_type if datatype == "ieeg" else "EEG"
                     channel_types = ["ECG" if name.upper().startswith(("ECG", "EKG")) else primary_type for name in recording.channel_names]
-                    channels_tsv(signal_dir / f"{prefix}_channels.tsv", recording.channel_names, recording.channel_units, channel_types)
+                    channels_tsv(signal_dir / f"{prefix}_channels.tsv", recording.channel_names, signal_units, channel_types)
                     sidecar = {"TaskName": task, "SamplingFrequency": recording.sampling_frequency, "PowerLineFrequency": "n/a", "SoftwareFilters": "n/a", "HardwareFilters": "n/a", "SourceSystem": "BCI2000", "RecordingDuration": recording.duration, "ConversionSoftware": "bci2000-bids"}
                     sidecar["iEEGReference" if datatype == "ieeg" else "EEGReference"] = routing.metadata.get("reference", "n/a")
                     write_json(signal_dir / f"{prefix}_{datatype}.json", sidecar)
