@@ -1,0 +1,123 @@
+{
+  "name": "init",
+  "metadata": {
+    "tracking_system": "unknown",
+    "review_required": true
+  },
+  "events": {
+    "JoystickButtons1": {
+      "strategy": "rising_edge",
+      "trial_type": "JoystickButtons1"
+    },
+    "StimulusTime": {
+      "strategy": "change",
+      "trial_type": "StimulusTime"
+    },
+    "TargetAngle": {
+      "strategy": "change",
+      "trial_type": "TargetAngle"
+    },
+    "TargetHit": {
+      "strategy": "rising_edge",
+      "trial_type": "TargetHit"
+    },
+    "TargetX": {
+      "strategy": "change",
+      "trial_type": "TargetX"
+    },
+    "TargetY": {
+      "strategy": "change",
+      "trial_type": "TargetY"
+    },
+    "TaskBlock": {
+      "strategy": "change",
+      "trial_type": "TaskBlock"
+    },
+    "TaskCondition": {
+      "strategy": "rising_edge",
+      "trial_type": "TaskCondition"
+    },
+    "TaskPhase": {
+      "strategy": "change",
+      "trial_type": "TaskPhase"
+    },
+    "TaskTrial": {
+      "strategy": "change",
+      "trial_type": "TaskTrial"
+    },
+    "TotalTimeMs": {
+      "strategy": "change",
+      "trial_type": "TotalTimeMs"
+    },
+    "TrialReset": {
+      "strategy": "rising_edge",
+      "trial_type": "TrialReset"
+    },
+    "TutorialPhase": {
+      "strategy": "change",
+      "trial_type": "TutorialPhase"
+    }
+  },
+  "motion": {
+    "CursorX": {
+      "column": "CursorX",
+      "type": "POSITION",
+      "units": "n/a"
+    },
+    "CursorY": {
+      "column": "CursorY",
+      "type": "POSITION",
+      "units": "n/a"
+    },
+    "JoystickXpos": {
+      "column": "JoystickXpos",
+      "type": "POSITION",
+      "units": "n/a"
+    },
+    "JoystickYpos": {
+      "column": "JoystickYpos",
+      "type": "POSITION",
+      "units": "n/a"
+    },
+    "MovementStarted": {
+      "column": "MovementStarted",
+      "type": "POSITION",
+      "units": "n/a"
+    },
+    "MovementTimeMs": {
+      "column": "MovementTimeMs",
+      "type": "POSITION",
+      "units": "n/a"
+    }
+  },
+  "ignore": [
+    "AudioBufferTime",
+    "AudioPresentationTime",
+    "FilePart",
+    "Introduction",
+    "JoystickButtons10",
+    "JoystickButtons2",
+    "JoystickButtons3",
+    "JoystickButtons4",
+    "JoystickButtons9",
+    "JoystickZpos",
+    "Notes",
+    "PracticeTrial",
+    "PreStimulusTime",
+    "PresentationDisplayed",
+    "PresentationFrame",
+    "PresentationRequested",
+    "PresentationTime",
+    "ReactionTimeMs",
+    "Recording",
+    "Running",
+    "SourceChannel1",
+    "SourceTime",
+    "TaskBlockType",
+    "VideoStimulusFrame",
+    "__pad0",
+    "__pad1",
+    "__pad2",
+    "__pad3"
+  ]
+}

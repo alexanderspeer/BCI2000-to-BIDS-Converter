@@ -21,6 +21,10 @@ Use **Include neural signal data** to choose between neural-plus-state conversio
 and state-only conversion. State-only conversion still requires a reviewed profile
 so the application knows which states are events, motion, or ignored data.
 
+If no profile is selected, the GUI generates a review-required starter mapping and
+shows a warning. This is convenient for inspection, but save and review the profile
+before treating the output as analysis-ready.
+
 Use `beh` only when neural export is intentionally disabled. For a recording with
 neural channels plus events or motion states, select `eeg` or `ieeg`; events and
 motion are exported in addition to the neural recording. Generate a starter profile

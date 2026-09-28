@@ -18,6 +18,7 @@ from .bids.participants import add_participant
 from .sidecars import write_json
 from .config import Profile, load_profile
 from .exceptions import BIDSConversionError, OutputExistsError
+from .profiles.generate import suggest_profile
 from .utils.hashing import sha256
 
 @dataclass
@@ -99,10 +100,18 @@ def convert(inputs: str | Path | Iterable[str | Path], output: str | Path, *, su
         raise BIDSConversionError("No .dat files found")
     if len({path.name for path in files}) != len(files):
         raise BIDSConversionError("Input files have duplicate names; use unique source filenames")
+    generated_profile = False
+    profile_source = profile or settings.get("profile")
     if isinstance(profile, Profile):
         routing = profile
     else:
-        routing = load_profile(profile or settings.get("profile"))
+        routing = load_profile(profile_source)
+    if not export_neural and profile_source is None and not (routing.events or routing.motion or routing.event_columns):
+        with BCI2000Recording(files[0]) as first_recording:
+            info = {"states": [{"name": name, "bit_width": int(first_recording.state_definitions[name].get("length", 0))} for name in first_recording.states]}
+        suggestion = suggest_profile(info)
+        routing = Profile(name=suggestion["name"], events=suggestion["events"], motion=suggestion["motion"], ignore=frozenset(suggestion["ignore"]), metadata=suggestion["metadata"])
+        generated_profile = True
     if not export_neural and not (routing.events or routing.motion or routing.event_columns):
         raise BIDSConversionError("State-only conversion requires a profile with event or motion mappings")
     if export_neural and datatype == "ieeg":
@@ -118,6 +127,8 @@ def convert(inputs: str | Path | Iterable[str | Path], output: str | Path, *, su
     if destination.exists() and on_existing == "skip":
         return ConversionReport(runs=list(range(1, len(files) + 1)))
     report = ConversionReport(runs=list(range(1, len(files) + 1)))
+    if generated_profile:
+        report.warnings.append("No profile supplied; generated a review-required starter mapping for state-only conversion.")
     if dry_run:
         return report
     stage = Path(tempfile.mkdtemp(prefix=f".{root.name}-", dir=root.parent))
