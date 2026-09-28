@@ -1,0 +1,28 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "bci2000-bids"
+version = "0.1.0"
+description = "Convert BCI2000 DAT recordings into BIDS datasets"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "The bci2000-bids contributors"}]
+dependencies = ["numpy>=1.23", "pyedflib>=0.1.30"]
+
+[project.optional-dependencies]
+yaml = ["PyYAML>=6.0"]
+bci2000 = ["BCI2000Tools"]
+dev = ["pytest>=7", "ruff>=0.6", "mypy>=1.8"]
+
+[project.scripts]
+bci2000-bids = "bci2000_bids.cli:main"
+bci2000-bids-gui = "bci2000_bids.gui:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bci2000_bids"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

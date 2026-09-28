@@ -1,0 +1,10 @@
+cff-version: 1.2.0
+title: bci2000-bids
+message: Please cite bci2000-bids when using this software.
+type: software
+authors:
+  - name: bci2000-bids contributors
+version: 0.1.0
+date-released: 2026-09-28
+license: MIT
+repository-code: https://github.com/example/bci2000-bids

@@ -1,0 +1,14 @@
+name: generic-motion
+metadata:
+  tracking_system: unknown
+events:
+  Marker:
+    strategy: rising_edge
+    trial_type: marker
+motion:
+  PositionX:
+    column: position_x
+    type: POSITION
+    units: arbitrary
+ignore:
+  - SourceTime

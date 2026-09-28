@@ -1,0 +1,6 @@
+subject: "001"
+session: "01"
+task: "motor"
+datatype: "beh"
+preserve_source: true
+profile: "generic-motion.yaml"
