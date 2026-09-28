@@ -17,6 +17,16 @@ protection as the command-line interface.
 For iEEG, select the actual channel type (`ECOG`, `SEEG`, or `DBS`). ECG/EKG-named
 channels are marked as `ECG` automatically.
 
+Use **Include neural signal data** to choose between neural-plus-state conversion
+and state-only conversion. State-only conversion still requires a reviewed profile
+so the application knows which states are events, motion, or ignored data.
+
+Use `beh` only when neural export is intentionally disabled. For a recording with
+neural channels plus events or motion states, select `eeg` or `ieeg`; events and
+motion are exported in addition to the neural recording. Generate a starter profile
+from the command line with `bci2000-bids profile recording.dat --output profile.json`,
+then review it in the GUI's Profile field.
+
 The GUI's **Preserve source and checksum** option copies raw `.dat` files into the
 selected dataset's `sourcedata/` directory. These files may contain identifying
 metadata and should only be preserved in an access-controlled location.

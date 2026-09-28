@@ -68,6 +68,7 @@ def _write_tsv(path: Path, columns: list[str], rows: list[list[Any]]) -> None:
 def convert(inputs: str | Path | Iterable[str | Path], output: str | Path, *, subject: str | None = None,
             session: str | None = None, task: str | None = None, datatype: str | None = None,
             channel_type: str | None = None,
+            export_neural: bool | None = None,
             profile: str | Path | Profile | None = None, config: str | Path | None = None,
             recursive: bool = False, preserve_source: bool = False, on_existing: str = "error",
             validate: bool = False, dry_run: bool = False,
@@ -78,6 +79,8 @@ def convert(inputs: str | Path | Iterable[str | Path], output: str | Path, *, su
     task = task or settings.get("task")
     datatype = datatype or settings.get("datatype", "beh")
     channel_type = channel_type or settings.get("channel_type")
+    if export_neural is None:
+        export_neural = settings.get("export_neural")
     preserve_source = preserve_source or bool(settings.get("preserve_source", False))
     on_existing = settings.get("on_existing", on_existing)
     if not subject or not task:
@@ -85,6 +88,10 @@ def convert(inputs: str | Path | Iterable[str | Path], output: str | Path, *, su
     subject, session, task = normalize_label(str(subject), "sub"), normalize_label(str(session), "ses"), normalize_label(str(task), "task")
     if datatype not in {"beh", "eeg", "ieeg"}:
         raise BIDSConversionError("datatype must be beh, eeg, or ieeg")
+    if export_neural is None:
+        export_neural = datatype in {"eeg", "ieeg"}
+    if export_neural and datatype == "beh":
+        raise BIDSConversionError("Neural export requires datatype=eeg or datatype=ieeg")
     if on_existing not in {"error", "skip", "overwrite"}:
         raise BIDSConversionError("on_existing must be error, skip, or overwrite")
     files = discover_inputs(inputs, recursive)
@@ -96,9 +103,9 @@ def convert(inputs: str | Path | Iterable[str | Path], output: str | Path, *, su
         routing = profile
     else:
         routing = load_profile(profile or settings.get("profile"))
-    if datatype == "beh" and not (routing.events or routing.motion or routing.event_columns):
-        raise BIDSConversionError("Behavior-only conversion requires a profile with event or motion mappings")
-    if datatype == "ieeg":
+    if not export_neural and not (routing.events or routing.motion or routing.event_columns):
+        raise BIDSConversionError("State-only conversion requires a profile with event or motion mappings")
+    if export_neural and datatype == "ieeg":
         channel_type = str(channel_type or routing.metadata.get("channel_type", ""))
         if channel_type not in {"ECOG", "SEEG", "DBS"}:
             raise BIDSConversionError("iEEG conversion requires channel_type=ECOG, SEEG, or DBS")
@@ -129,7 +136,8 @@ def convert(inputs: str | Path | Iterable[str | Path], output: str | Path, *, su
             if progress:
                 progress((run - 1) / len(files), f"Reading run {run}/{len(files)}: {source.name}")
             context = BIDSContext(subject, session, task, run)
-            datatype_dir = stage / f"sub-{subject}" / f"ses-{session}" / datatype
+            output_datatype = datatype if export_neural else "beh"
+            datatype_dir = stage / f"sub-{subject}" / f"ses-{session}" / output_datatype
             prefix = context.prefix
             event_dir = datatype_dir
             with BCI2000Recording(source) as recording:
@@ -139,7 +147,7 @@ def convert(inputs: str | Path | Iterable[str | Path], output: str | Path, *, su
                     raise BIDSConversionError(f"Profile states missing from {source.name}: {', '.join(missing)}")
                 signal, states = recording.read_selected(
                     state_names,
-                    signal=datatype in {"eeg", "ieeg"},
+                    signal=bool(export_neural),
                     progress=(lambda fraction, run=run: progress(((run - 1) + fraction * 0.75) / len(files), f"Decoding run {run}/{len(files)}") if progress else None),
                 )
                 if routing.events or routing.event_columns:
@@ -153,7 +161,7 @@ def convert(inputs: str | Path | Iterable[str | Path], output: str | Path, *, su
                     motion_columns, _ = write_motion(motion_path, states, routing.motion, recording.sampling_frequency)
                     motion_channels(motion_dir / f"{prefix}_tracksys-{tracking_system}_channels.tsv", motion_columns, routing.motion)
                     write_json(motion_dir / f"{prefix}_tracksys-{tracking_system}_motion.json", {"SamplingFrequency": recording.sampling_frequency, "StartTime": 0.0, "Columns": motion_columns, "TrackingSystemName": tracking_system})
-                if datatype in {"eeg", "ieeg"}:
+                if export_neural:
                     signal_dir = datatype_dir
                     signal_path = signal_dir / f"{prefix}_{datatype}.edf"
                     write_edf(signal, signal_path, recording.sampling_frequency, recording.channel_names, recording.channel_units)

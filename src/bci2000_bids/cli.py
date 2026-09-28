@@ -9,6 +9,7 @@ from .bci2000.inspection import inspect_recording
 from .bids.validation import validate
 from .convert import convert
 from .logging import configure
+from .profiles.generate import suggest_profile
 from .utils.prompts import ask
 
 
@@ -26,6 +27,10 @@ def main(argv: list[str] | None = None) -> int:
     convert_parser.add_argument("--task")
     convert_parser.add_argument("--datatype", choices=["beh", "eeg", "ieeg"])
     convert_parser.add_argument("--channel-type", choices=["ECOG", "SEEG", "DBS"], help="Required for iEEG output")
+    neural = convert_parser.add_mutually_exclusive_group()
+    neural.add_argument("--include-neural", dest="export_neural", action="store_true", help="Export neural signal data")
+    neural.add_argument("--no-neural", dest="export_neural", action="store_false", help="Export only configured states/events/motion")
+    convert_parser.set_defaults(export_neural=None)
     convert_parser.add_argument("--profile", type=Path)
     convert_parser.add_argument("--config", type=Path)
     convert_parser.add_argument("--recursive", action="store_true")
@@ -46,7 +51,8 @@ def main(argv: list[str] | None = None) -> int:
             print(json.dumps(inspect_recording(args.file), indent=2))
         elif args.command == "profile":
             info = inspect_recording(args.file)
-            profile = {"name": args.file.stem, "events": {}, "motion": {}, "ignore": info["states"]}
+            profile = suggest_profile(info)
+            profile["name"] = args.file.stem + "-starter"
             text = json.dumps(profile, indent=2) + "\n"
             if args.output:
                 args.output.write_text(text, encoding="utf-8")
@@ -73,7 +79,7 @@ def main(argv: list[str] | None = None) -> int:
                     args.datatype = ask("Recording type: beh, eeg, or ieeg", "beh")
                 else:
                     raise ValueError("datatype is required in non-interactive mode; choose beh, eeg, or ieeg")
-            report = convert(args.input, args.output, subject=args.subject, session=args.session, task=args.task, datatype=args.datatype, channel_type=args.channel_type, profile=args.profile, config=args.config, recursive=args.recursive, preserve_source=args.preserve_source, on_existing=args.on_existing, validate=args.validate, dry_run=args.dry_run)
+            report = convert(args.input, args.output, subject=args.subject, session=args.session, task=args.task, datatype=args.datatype, channel_type=args.channel_type, export_neural=args.export_neural, profile=args.profile, config=args.config, recursive=args.recursive, preserve_source=args.preserve_source, on_existing=args.on_existing, validate=args.validate, dry_run=args.dry_run)
             print(f"Planned/converted {len(report.runs)} run(s).")
         return 0
     except Exception as error:

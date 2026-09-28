@@ -62,6 +62,20 @@ the modality. iEEG conversion also requires `--channel-type ECOG`, `SEEG`, or `D
 unless that value is supplied by the profile/configuration. Automatic state
 suggestions are not scientific decisions.
 
+To export only configured states/events/motion without neural data, use
+`--no-neural` with a reviewed profile. The GUI exposes the same choice as
+**Include neural signal data**.
+
+Generate a reviewed starter profile for an unfamiliar recording with:
+
+```bash
+bci2000-bids profile recording.dat --output recording-profile.json
+```
+
+Open the generated file and confirm every event and motion mapping before using it.
+The generator marks the profile `review_required: true` and uses only conservative
+name/bit-width suggestions.
+
 ## Python API
 
 ```python

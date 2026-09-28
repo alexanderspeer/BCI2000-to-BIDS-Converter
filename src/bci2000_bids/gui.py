@@ -34,6 +34,7 @@ class ConverterGUI:
         self.task_value = tk.StringVar()
         self.datatype_value = tk.StringVar(value="beh")
         self.channel_type_value = tk.StringVar(value="ECOG")
+        self.neural_value = tk.BooleanVar(value=False)
         self.recursive_value = tk.BooleanVar()
         self.preserve_value = tk.BooleanVar()
         self.validate_value = tk.BooleanVar(value=True)
@@ -68,7 +69,9 @@ class ConverterGUI:
             ttk.Label(frame, text=label).grid(row=row, column=0, sticky="w", pady=4)
             ttk.Entry(frame, textvariable=variable).grid(row=row, column=1, sticky="ew", padx=8)
             row += 1
-        ttk.Label(frame, text="Recording type").grid(row=row, column=0, sticky="w", pady=4)
+        ttk.Checkbutton(frame, text="Include neural signal data", variable=self.neural_value).grid(row=row, column=0, columnspan=2, sticky="w", pady=4)
+        row += 1
+        ttk.Label(frame, text="Neural datatype (if included)").grid(row=row, column=0, sticky="w", pady=4)
         ttk.Combobox(frame, textvariable=self.datatype_value, values=("beh", "eeg", "ieeg"), state="readonly").grid(row=row, column=1, sticky="w", padx=8)
         row += 1
         ttk.Label(frame, text="iEEG channel type").grid(row=row, column=0, sticky="w", pady=4)
@@ -161,6 +164,7 @@ class ConverterGUI:
             "task": self.task_value.get(),
             "datatype": self.datatype_value.get(),
             "channel_type": self.channel_type_value.get(),
+            "export_neural": self.neural_value.get(),
             "profile": self.profile_value.get() or None,
             "preserve_source": self.preserve_value.get(),
             "on_existing": self.existing_value.get(),
@@ -172,7 +176,7 @@ class ConverterGUI:
 
     def _run(self, files: list[Path], output: str, dry_run: bool, settings: dict[str, object]) -> None:
         try:
-            report = convert(files, output, subject=str(settings["subject"]), session=str(settings["session"]), task=str(settings["task"]), datatype=str(settings["datatype"]), channel_type=str(settings["channel_type"]), profile=settings["profile"], recursive=False, preserve_source=bool(settings["preserve_source"]), on_existing=str(settings["on_existing"]), validate=bool(settings["validate"]), dry_run=dry_run, progress=lambda fraction, message: self.messages.put(("progress", (fraction, message))))
+            report = convert(files, output, subject=str(settings["subject"]), session=str(settings["session"]), task=str(settings["task"]), datatype=str(settings["datatype"]), channel_type=str(settings["channel_type"]), export_neural=bool(settings["export_neural"]), profile=settings["profile"], recursive=False, preserve_source=bool(settings["preserve_source"]), on_existing=str(settings["on_existing"]), validate=bool(settings["validate"]), dry_run=dry_run, progress=lambda fraction, message: self.messages.put(("progress", (fraction, message))))
             self.messages.put(("message", f"Completed: {len(report.runs)} run(s). Output: {output}"))
         except Exception as error:
             self.messages.put(("message", f"ERROR: {error}"))
